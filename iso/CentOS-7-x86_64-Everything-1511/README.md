@@ -1,0 +1,1 @@
+Example directory for CentOS-7-x86_64-Everything-1511.iso. Downloaded ISO file will be mounted on this directory.
