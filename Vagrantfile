@@ -10,6 +10,7 @@ Vagrant.configure('2') do |config|
     $env['hosts'].each do |host_name, host_config|
         config.vm.define host_name do |host|
             host.vm.synced_folder '.', '/vagrant', :disabled => true
+            host.vm.synced_folder './iso', '/root/iso'
 
             host.vm.box = host_config['box']
             host.vm.network 'private_network', :ip => host_config['private_ip']

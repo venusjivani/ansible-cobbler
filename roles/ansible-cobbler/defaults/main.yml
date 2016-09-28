@@ -5,11 +5,11 @@
 # WARNING: The default password is "changeme" fine for demo purposes
 # but should be set to something more secure.
 cobbler_default_password_crypted: $1$0j9R7J3U$qhH8N9oXlytT.pEjjSud60
-bound_interface: eth1
+bound_interface: enp0s8
 
 cobbler_get_loaders: true
 cobbler_signature_update: true
-cobbler_proxy_url_ext: 
+cobbler_proxy_url_ext:
 # dhcpd
 cobbler_dhcp_listen_interfaces: eth1
 
@@ -36,7 +36,7 @@ cobbler_version: "2.6.11-1"
 ubuntu_mirror: us.archive.ubuntu.com
 
 # cobbler distros iso
-#distros:
+distros:
 #  - {
 #      name: ubuntu-14.04-mini,
 #      arch: x86_64,
@@ -45,6 +45,14 @@ ubuntu_mirror: us.archive.ubuntu.com
 #      path: /root/iso/ubuntu-14.04-mini/,
 #      kickstart: /var/lib/cobbler/kickstarts/ubuntu-server.preseed
 #    }
+  - {
+      name: CentOS-7,
+      arch: x86_64,
+      url: 'https://ftp.iitm.ac.in/centos/7/isos/x86_64/CentOS-7-x86_64-Everything-1511.iso',
+      file:  /root/iso/CentOS-7-x86_64-Everything-1511.iso,
+      path:  /root/iso/CentOS-7-x86_64-Everything-1511,
+      kickstart: /var/lib/cobbler/kickstarts/CentOS-7.ks
+    }
 
 # cobbler distro imports
 # Uncomment (and change) the following lines if you wish to import a distro.
@@ -86,19 +94,39 @@ ubuntu_mirror: us.archive.ubuntu.com
 #       ksmeta: 'ksvariable=hello',
 #       repos: 'centos-updates-6.6-x86_64 epel-6-x86_64',
 #     }
+#   - {
+#       name: CentOS-7-x86_64,
+#       distro: CentOS-7-x86_64,
+#       kickstart: /var/lib/cobbler/kickstarts/CentOS-7.ks,
+#       ksmeta: 'ksvariable=hello',
+#       repos: 'centos-updates-6.6-x86_64 epel-6-x86_64',
+#     }
 
 # cobbler systems
-#systems:
-#   - {
-#       name: cobbler-node1,
-#       hostname: cobbler-node1.local,
-#       profile: ubuntu-14.04-mini-x86_64,
-#       interface: eth0,
-#       ip: 10.0.2.100,
-#       netmask: 255.255.255.0,
-#       gateway: 10.0.2.2,
-#       mac: '00:50:56:25:2B:19',
-#       netboot: 'false'
+systems:
+   - {
+       name: cobbler-node1,
+       hostname: cobbler-node1.local,
+       profile: CentOS-7-x86_64,
+       interface: enp0s8,
+       ip: 10.0.2.100,
+       netmask: 255.255.255.0,
+       gateway: 10.0.2.2,
+       mac: '00:50:56:25:2B:19',
+       netboot: 'false'
 #      dhcptag: 192.168.10.0,
 #      next_server: 192.168.10.11
+     }
+#   - {
+#       name: cobbler-node2,
+#       hostname: cobbler-node2.local,
+#       profile: ubuntu-14.04-mini-x86_64,
+#       interface: eth0,
+#       ip: 10.0.2.101,
+#       netmask: 255.255.255.0,
+#       gateway: 10.0.2.2,
+#       mac: '00:50:56:25:2B:11',
+#       netboot: 'false'
+##      dhcptag: 192.168.10.0,
+##      next_server: 192.168.10.11
 #     }
