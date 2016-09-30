@@ -4,7 +4,7 @@
 
 hosts:
     cobbler-centos:
-      private_ip: 10.0.3.10
+      private_ip: 192.168.168.2
       memory: 512
 #      box: chef/centos-7.0
       box: bento/centos-7.2  

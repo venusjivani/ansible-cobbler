@@ -27,6 +27,11 @@
 # ---------------
 
 # yum
+- name: Copy dependencies rpm to server (yum)
+  copy:
+     src: debmirror-2.16-4.el7.centos.noarch.rpm
+     dest: /tmp/debmirror-2.16-4.el7.centos.noarch.rpm
+
 - name: configure epel repo (yum)
   template: src=epel.repo.j2
         dest=/etc/yum.repos.d/epel.repo
@@ -49,8 +54,15 @@
 - name: install dependencies (yum)
   yum: name={{ item }} state=present
   with_items:
+    - dnsmasq
     - xinetd
     - dhcp
+    - syslinux
+    - pykickstart
+    - httpd
+    - rsync
+    - fence-agents
+    - /tmp/debmirror-2.16-4.el7.centos.noarch.rpm
   when: ansible_pkg_mgr == 'yum'
 
 # apt
@@ -70,7 +82,7 @@
 # selinux
 # -------
 - name: set selinux to permissive (yum)
-  selinux: policy=targeted state=permissive
+  selinux: policy=targeted state=disabled
   when: ansible_pkg_mgr == 'yum'
 
 # -----
@@ -80,9 +92,9 @@
   template: src=dhcpd.j2 dest=/etc/sysconfig/dhcpd
   when: ansible_pkg_mgr == 'yum'
 
-- name: enable dhcpd (yum)
-  service: name=dhcpd state=stopped enabled=true
-  when: ansible_pkg_mgr == 'yum'
+#- name: enable dhcpd (yum)
+#  service: name=dhcpd state=stopped enabled=true
+#  when: ansible_pkg_mgr == 'yum'
 
 # ---------------
 # isc-dhcp-server
@@ -98,7 +110,7 @@
 # ---------
 # firewalld
 # ---------
-- name: check if firewalld is installed
+- name: check if firewalld is installed (yum)
   become: yes
   command: which firewalld
   register: firewalld
@@ -106,20 +118,20 @@
   ignore_errors: true
   when: ansible_pkg_mgr == 'yum'
 
-- name: check if firewalld service is running
+- name: check if firewalld service is running (yum)
   become: yes
   command: firewall-cmd --state
   register: firewalld_svc
   ignore_errors: true
   when: firewalld|success
 
-- name: enable cobbler tftpd through firewalld
+- name: enable cobbler tftpd through firewalld (yum)
   become: yes
   firewalld: service=tftp permanent=true state=enabled
   notify: restart firewalld
   when: firewalld|success and firewalld_svc.stdout=='running'
 
-- name: enable cobbler httpd through firewalld
+- name: enable cobbler httpd through firewalld (yum)
   become: yes
   firewalld: service=http permanent=true state=enabled
   notify: restart firewalld
@@ -128,7 +140,7 @@
 # ---
 # ufw
 # ---
-- name: check if ufw is installed
+- name: check if ufw is installed (apt)
   become: yes
   command: which ufw
   register: ufw
@@ -136,7 +148,7 @@
   ignore_errors: true
   when: ansible_pkg_mgr == 'apt'
 
-- name: allow tftp through ufw
+- name: allow tftp through ufw (apt)
   become: yes
   ufw: rule=allow port=69 proto=tcp
   when: ansible_pkg_mgr == 'apt' and ufw|success
@@ -150,7 +162,10 @@
 # Cobbler
 # -------
 - name: install cobbler (yum)
-  yum: name=cobbler state=present
+  yum: name={{ item }} state=present
+  with_items:
+      - cobbler
+      - cobbler-web
   when: ansible_pkg_mgr == 'yum'
 
 - name: install cobbler (apt)
@@ -193,16 +208,43 @@
   service: name=httpd state=started enabled=true
   when: httpd_path.stat.isdir is defined and httpd_path.stat.isdir
 
-- name: configure xinetd rsync
+- name: configure xinetd rsync (apt)
   copy: src=rsync
         dest=/etc/xinetd.d/
         owner=root group=root mode=0644
   notify: restart xinetd
+  when: ansible_pkg_mgr == 'apt'
+
+- name: start and enable rsyncd (yum)
+  service: name=rsyncd state=started enabled=true
+  when: ansible_pkg_mgr == 'yum'
 
 - name: start and enable xinetd
   service: name=xinetd state=started enabled=true
 
-- name: configure cobbler
+- name: configure cobbler's modules
+  lineinfile:
+    dest: /etc/cobbler/modules.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: "{{ item.insertafter }}"
+    state: present
+    backrefs: yes
+  with_items:
+    - { regexp: ^module = manage_isc, line: "module = manage_dnsmasq", insertafter: "^\\[dhcp\\]$" }
+    - { regexp: ^module = manage_bind, line: "module = manage_dnsmasq", insertafter: "^\\[dns\\]$" }
+
+- name: configure cobbler's debmirror (yum)
+  replace:
+    dest: /etc/debmirror.conf
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { regexp: ^@dists, replace: "#@dists" }
+    - { regexp: ^@arches, replace: "#@arches" }
+  when: ansible_pkg_mgr == 'yum'
+
+- name: configure cobbler's settings
   template: src=settings.j2 dest=/etc/cobbler/settings
   notify:
     - restart cobbler
@@ -233,6 +275,13 @@
     - wait for cobbler
     - sync cobbler
 
+- name: configure cobbler dnsmasq
+  template: src=dnsmasq.template.j2 dest=/etc/cobbler/dnsmasq.template
+  notify:
+    - restart cobbler
+    - wait for cobbler
+    - sync cobbler
+
 - name: configure cobbler dhcp
   template: src=dhcp.template.j2 dest=/etc/cobbler/dhcp.template
   notify:
@@ -252,13 +301,6 @@
   mount: name={{ item.path | quote }} src={{ item.file | quote }} fstype=iso9660 state=unmounted
   with_items: "{{ distros }}"
   when: distros is defined
-#  ignore_errors: yes
-
-#- name: umount isos
-#  shell: umount {{ item.path | quote }}
-#  with_items: "{{ distros }}"
-#  when: distros is defined
-#  ignore_errors: yes
 
 - name: create iso directory to hold distro images
   file: path=~/iso state=directory

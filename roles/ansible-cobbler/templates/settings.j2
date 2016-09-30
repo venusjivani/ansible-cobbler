@@ -118,7 +118,7 @@ default_template_type: "cheetah"
 # "virbr0".  This can be overriden on a per-profile
 # basis or at the koan command line though this saves
 # typing to just set it here to the most common option.
-default_virt_bridge: virbr0
+default_virt_bridge: xenbr0
 
 # use this as the default disk size for virt guests (GB)
 default_virt_file_size: 5
@@ -130,7 +130,7 @@ default_virt_ram: 512
 # is set on the profile/system, what virtualization type
 # should be assumed?  Values: xenpv, xenfv, qemu, vmware
 # (NOTE: this does not change what virt_type is chosen by import)
-default_virt_type: qemu
+default_virt_type: xenpv
 
 # enable gPXE booting? Enabling this option will cause cobbler
 # to copy the undionly.kpxe file to the tftp root directory,
@@ -248,7 +248,7 @@ manage_dhcp: 1
 
 # set to 1 to enable Cobbler's DNS management features.
 # the choice of DNS mangement engine is in /etc/cobbler/modules.conf
-manage_dns: 0
+manage_dns: 1
 
 # set to path of bind chroot to create bind-chroot compatible bind
 # configuration files.  This should be automatically detected.
@@ -456,7 +456,7 @@ replicate_rsync_options: "-avzH"
 replicate_repo_rsync_options: "-avzH"
 
 # always write DHCP entries, regardless if netboot is enabled
-always_write_dhcp_entries: 1
+always_write_dhcp_entries: 0
 
 # external proxy - used by: get-loaders, reposync, signature update
 # eg: proxy_url_ext: "http://192.168.1.1:8080"
