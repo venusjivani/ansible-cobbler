@@ -96,6 +96,10 @@
 #  service: name=dhcpd state=stopped enabled=true
 #  when: ansible_pkg_mgr == 'yum'
 
+- name: enable dnsmasq (yum)
+  service: name=dnsmasq state=stopped enabled=true
+  when: ansible_pkg_mgr == 'yum'
+
 # ---------------
 # isc-dhcp-server
 # ---------------
@@ -205,7 +209,7 @@
   register: httpd_path
 
 - name: start and enable httpd
-  service: name=httpd state=started enabled=true
+  service: name=httpd state=reloaded enabled=true
   when: httpd_path.stat.isdir is defined and httpd_path.stat.isdir
 
 - name: configure xinetd rsync (apt)
